@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { convertToRaw, EditorState } from 'draft-js';
 import { Container } from 'semantic-ui-react';
 import {
-  Button, Input, Label, Form, TextArea, Dropdown, Header, Segment, Radio
+  Button, Input, Label, Form, Dropdown, Header, Segment, Radio
 } from 'semantic-ui-react'
 
 import axios from 'axios';
@@ -9,6 +10,7 @@ import _ from 'underscore';
 
 import AppContext from './contexts/AppContext';
 
+import RateEditor from './RateEditor';
 import StatesDropdown from './StatesDropdown';
 import UnderwritersDropdown from './UnderwritersDropdown';
 import 'semantic-ui-css/semantic.min.css'
@@ -49,18 +51,6 @@ function App() {
 }
 
 function ParserInput() {
-  const [tableType, setTableType] = useState('');
-
-  const [tableText, setTableText] = useState('');
-  const [numCols, setNumCols] = useState(2);
-  const [toAmountColIndex, setToAmountColIndex] = useState(1);
-  const [premiumColIndex, setPremiumColIndex] = useState(2);
-
-  const [additionalTableText, setAdditionalTableText] = useState('');
-  const [additionalNumCols, setAdditionalNumCols] = useState(2);
-  const [additionalToAmountColIndex, setAdditionalToAmountColIndex] = useState(1);
-  const [additionalPremiumColIndex, setAdditionalPremiumColIndex] = useState(2);
-
   const TableTypeRadioButtons = ({tableType, setTableType}) => {
     const tableTypes = ['Fixed', 'Graduated', 'Joint'];
 
@@ -83,9 +73,9 @@ function ParserInput() {
     );
   };
 
-  const TableTextInput = (
-    {tableType, numCols, toAmountColIndex, premiumColIndex,
-      setNumCols, setToAmountColIndex, setPremiumColIndex, tableText, setTableText
+  const TableTextEditorStateInput = (
+    {tableType, tableTextEditorState, numCols, toAmountColIndex, premiumColIndex,
+      setTableTextEditorState, setNumCols, setToAmountColIndex, setPremiumColIndex,
     }) => {
       const numberOptions = _.range(1, 9).map(x => ({key: x, value: x, text: x}));
 
@@ -93,41 +83,80 @@ function ParserInput() {
         <div>
           <Form.Field>
             <label>{tableType} Table Text</label>
-            <Form.TextArea
-              placeholder='Money Money'
-              value={tableText}
-              onChange={(e, data) => {e.preventDefault(); setTableText(data.value)}}
+            <RateEditor
+              editorState={tableTextEditorState}
+              setEditorState={setTableTextEditorState}
             />
           </Form.Field>
-          <label>Number of Columns with $</label>
-          <Dropdown
-            placeholder='Number of Columns with $'
-            floating
-            options={numberOptions}
-            defaultValue={numCols}
-            onChange={(e, data) => {setNumCols(data.value)}}
-          />
-          <label>'To Amount' Column Index</label>
-          <Dropdown
-            placeholder={'Index of the Column for \'To Amount\' (Upper Bound)'}
-            floating
-            options={_.take(numberOptions, numCols)}
-            defaultValue={toAmountColIndex}
-            onChange={(e, data) => {setToAmountColIndex(data.value)}}
-          />
-          <label>Premium Column Index</label>
-          <Dropdown
-            placeholder='Index of the Column for Insurance Premium'
-            floating
-            options={_.take(numberOptions, numCols)}
-            defaultValue={premiumColIndex}
-            onChange={(e, data) => {setPremiumColIndex(data.value)}}
-          />
+          <Form.Field>
+            <label>Number of Columns with $</label>
+            <Dropdown
+              placeholder='Number of Columns with $$$$'
+              floating
+              options={numberOptions}
+              defaultValue={numCols}
+              onChange={(e, { value }) => {setNumCols(value)}}
+            />
+          </Form.Field>
+          <Form.Field>
+            <label>'To Amount' Column Index</label>
+            <Dropdown
+              placeholder={'Index of the Column for \'To Amount\' (Upper Bound)'}
+              floating
+              options={_.take(numberOptions, numCols)}
+              defaultValue={toAmountColIndex}
+              onChange={(e, { value }) => {setToAmountColIndex(value)}}
+            />
+          </Form.Field>
+          <Form.Field>
+            <label>Premium Column Index</label>
+            <Dropdown
+              placeholder='Index of the Column for Insurance Premium'
+              floating
+              options={_.take(numberOptions, numCols)}
+              defaultValue={premiumColIndex}
+              onChange={(e, { value }) => {setPremiumColIndex(value)}}
+            />
+          </Form.Field>
         </div>
       );
   };
 
+  const [tableType, setTableType] = useState('');
+
+  const [tableTextEditorState, setTableTextEditorState] = useState(EditorState.createEmpty());
+  const [numCols, setNumCols] = useState(2);
+  const [toAmountColIndex, setToAmountColIndex] = useState(1);
+  const [premiumColIndex, setPremiumColIndex] = useState(2);
+
+  const [additionalTableTextEditorState, setAdditionalTableTextEditorState] = useState(EditorState.createEmpty());
+  const [additionalNumCols, setAdditionalNumCols] = useState(2);
+  const [additionalToAmountColIndex, setAdditionalToAmountColIndex] = useState(1);
+  const [additionalPremiumColIndex, setAdditionalPremiumColIndex] = useState(2);
+
+
   const isJointTable = tableType === 'Joint';
+  const convertEditorStateToText = (editorState) => {
+    const blocks = convertToRaw(editorState.getCurrentContent()).blocks;
+    return blocks.map(block => (!block.text.trim() && '\n') || block.text).join('\n');
+  };
+
+  const handleGenerateTable = () => {
+    const payload = {
+      text: convertEditorStateToText(tableTextEditorState),
+      interval: 1000,
+      type: 'fixed',
+      num_cols: 3,
+      to_amount_col_idx: 0,
+      premium_col_idx: 2
+    }
+
+    axios.post(`http://localhost:4567/parse_rate_table_text`, payload).then(res => {
+      console.log(res);
+      console.log(res.data);
+
+    });
+  }
 
   return (
       <Segment raised>
@@ -146,32 +175,38 @@ function ParserInput() {
           </Input>
         </Form.Field>
 
-        <TableTextInput
+        <TableTextEditorStateInput
           tableType={!isJointTable ? tableType : 'Fixed'}
-          tableText={tableText}
+          tableTextEditorState={tableTextEditorState}
           numCols={numCols}
           toAmountColIndex={toAmountColIndex}
           premiumColIndex={premiumColIndex}
-          setTableText={setTableText}
+          setTableTextEditorState={setTableTextEditorState}
           setNumCols={setNumCols}
           setToAmountColIndex={setToAmountColIndex}
           setPremiumColIndex={setPremiumColIndex}
         />
         {
           isJointTable && (
-            <TableTextInput
+            <TableTextEditorStateInput
               tableType='Graduated'
-              tableText={additionalTableText}
+              tableTextEditorState={additionalTableTextEditorState}
               numCols={additionalNumCols}
               toAmountColIndex={additionalToAmountColIndex}
               premiumColIndex={additionalPremiumColIndex}
-              setTableText={setAdditionalTableText}
+              setTableTextEditorState={setAdditionalTableTextEditorState}
               setNumCols={setAdditionalNumCols}
               setToAmountColIndex={setAdditionalToAmountColIndex}
               setPremiumColIndex={setAdditionalPremiumColIndex}
             />
           )
         }
+        <Button
+          onClick={handleGenerateTable}
+        >
+          Preview
+        </Button>
+
       </Segment>
   );
 }
@@ -230,7 +265,8 @@ function RateFormPage() {
               onClick={(e, value) => {
                 Object.assign(formPayload, {cpl_fee: cplFee});
                 handleSubmit(formPayload);
-              }}>Submit</Button>
+              }}>Submit
+            </Button>
           </Form>
         </div>
       );
