@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Button, Input, Label, Form
+  Button, Icon, Input, Label, Form, TextArea, Segment
 } from 'semantic-ui-react'
 
 import axios from 'axios';
 
 import AppContext from './contexts/AppContext';
 
-import ParserInput from './ParserInput';
-
+import ParserInputModal from './ParserInputModal';
+import { getTableVariableName } from './utils';
 
 function RateFormPage() {
+  const [tableName, setTableName] = useState(''); // TODO: make this an array
   const [promulgatedStates, setPromulgatedStates] = useState([]);
   const [cplFee, setCplFee] = useState();
-  const [parserOutput, setParserOutput] = useState('');
+  const [parserOutput, setParserOutput] = useState({});
 
   useEffect(() => {
     // We moved these functions inside!
@@ -45,7 +46,6 @@ function RateFormPage() {
       if (promulgatedStates.includes(context.stateCode)) {
         return <Button onClick={() => {handleSubmit(formPayload)}}>Submit</Button>;
       }
-      const parserOutputHtml = parserOutput.replace(/ /g, "&nbsp;").replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>");
 
       return (
         <Form>
@@ -58,11 +58,27 @@ function RateFormPage() {
             </Input>
             </Form.Field>
 
-            <ParserInput
+            <ParserInputModal
+              tableName={tableName}
+              setTableName={setTableName}
+              parserOutput={parserOutput}
               setParserOutput={setParserOutput}
             />
-<div
-dangerouslySetInnerHTML={{__html: parserOutputHtml}} />
+
+            {
+              (true || parserOutput.text) && (
+                <Segment>
+                  {/* TODO: Work on this edit button! */}
+                  <Button icon style={{float: 'right'}}>
+                    <Icon name='edit' />
+                  </Button>
+
+                  <p>{getTableVariableName(parserOutput)}</p>
+                  <TextArea style={{resize: 'none'}} value={parserOutput.text} disabled>
+                  </TextArea>
+                </Segment>
+              )
+            }
           </div>
             <Button
               type="submit"

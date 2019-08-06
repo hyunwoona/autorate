@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { convertToRaw, EditorState } from 'draft-js';
 import {
-  Button, Input, Form, Dropdown, Header, Segment, Radio
+  Button, Input, Form, Dropdown, Header, Segment, Radio, Modal, TextArea, Dimmer, Loader
 } from 'semantic-ui-react'
 
 import axios from 'axios';
 import _ from 'underscore';
 
 import RateEditor from './RateEditor';
+import { getTableVariableName } from './utils';
 
 
-function ParserInput({setParserOutput}) {
+function ParserInputModal({tableName, setTableName, parserOutput, setParserOutput}) {
   const [tableType, setTableType] = useState('');
 
   const [tableTextEditorState, setTableTextEditorState] = useState(EditorState.createEmpty());
@@ -25,6 +26,7 @@ function ParserInput({setParserOutput}) {
   const [additionalToAmountColIndex, setAdditionalToAmountColIndex] = useState(1);
   const [additionalPremiumColIndex, setAdditionalPremiumColIndex] = useState(2);
 
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const isJointTable = tableType === 'Joint';
   const convertEditorStateToText = (editorState) => {
@@ -34,6 +36,7 @@ function ParserInput({setParserOutput}) {
 
   const handleGenerateTable = () => {
     const payload = {
+      name: tableName,
       text: convertEditorStateToText(tableTextEditorState),
       interval: amountInterval,
       type: tableType,
@@ -41,70 +44,96 @@ function ParserInput({setParserOutput}) {
       to_amount_col_idx: toAmountColIndex - 1,
       premium_col_idx: premiumColIndex - 1,
     };
-
+    setIsGenerating(true);
     axios.post(`http://localhost:4567/parse_rate_table_text`, payload).then(res => {
       setParserOutput(res.data);
+      setIsGenerating(false);
     });
-  }
+  };
 
   return (
-      <Segment raised>
-        <Header size='medium'>Add {tableType} Table</Header>
-
-        <div style={{textAlign: "left"}}>
-
-          <Form.Field>
-            <TableTypeRadioButtons
-              tableType={tableType}
-              setTableType={setTableType}
-            />
-          </Form.Field>
-          <Form.Field>
-            <label>Table Name</label>
-            <Input labelPosition='right' type='text' placeholder='Amount' onChange={(e) => {}}>
-              <input placeholder='Name of the table' />
-            </Input>
-          </Form.Field>
-
-          <TableTextEditorStateInput
-            tableType={!isJointTable ? tableType : 'Fixed'}
-            tableTextEditorState={tableTextEditorState}
-            amountInterval={amountInterval}
-            numCols={numCols}
-            toAmountColIndex={toAmountColIndex}
-            premiumColIndex={premiumColIndex}
-            setAmountInterval={setAmountInterval}
-            handleTableTextEditorStateChange={setTableTextEditorState}
-            setNumCols={setNumCols}
-            setToAmountColIndex={setToAmountColIndex}
-            setPremiumColIndex={setPremiumColIndex}
-          />
-          {
-            isJointTable && (
-              <TableTextEditorStateInput
-                tableType='Graduated'
-                tableTextEditorState={additionalTableTextEditorState}
-                amountInterval={additionalAmountInterval}
-                numCols={additionalNumCols}
-                toAmountColIndex={additionalToAmountColIndex}
-                premiumColIndex={additionalPremiumColIndex}
-                setAmountInterval={setAdditionalAmountInterval}
-                handleTableTextEditorStateChange={setAdditionalTableTextEditorState}
-                setNumCols={setAdditionalNumCols}
-                setToAmountColIndex={setAdditionalToAmountColIndex}
-                setPremiumColIndex={setAdditionalPremiumColIndex}
+    <Modal trigger={<Button>Show Modal</Button>}>
+      <Modal.Header>Add {tableType} Table</Modal.Header>
+      <Modal.Content>
+        <Modal.Description>
+          <Header size='medium'></Header>
+          <Form>
+            <label>Table Type</label>
+            <Form.Field>
+              <TableTypeRadioButtons
+                tableType={tableType}
+                setTableType={setTableType}
               />
-            )
-          }
-        </div>
+            </Form.Field>
 
-        <Button
-          onClick={handleGenerateTable}
-        >
-          Preview
-        </Button>
+            <Form.Field>
+              <label>Table Name</label>
+              <Input labelPosition='right' type='text' placeholder='Amount' defaultValue={tableName} onChange={(e, { value }) => {setTableName(value)}}>
+                <input placeholder='Name of the table' />
+              </Input>
+            </Form.Field>
 
-      </Segment>
+            <TableTextEditorStateInput
+              tableType={!isJointTable ? tableType : 'Fixed'}
+              tableTextEditorState={tableTextEditorState}
+              amountInterval={amountInterval}
+              numCols={numCols}
+              toAmountColIndex={toAmountColIndex}
+              premiumColIndex={premiumColIndex}
+              setAmountInterval={setAmountInterval}
+              handleTableTextEditorStateChange={setTableTextEditorState}
+              setNumCols={setNumCols}
+              setToAmountColIndex={setToAmountColIndex}
+              setPremiumColIndex={setPremiumColIndex}
+            />
+            {
+              isJointTable && (
+                <TableTextEditorStateInput
+                  tableType='Graduated'
+                  tableTextEditorState={additionalTableTextEditorState}
+                  amountInterval={additionalAmountInterval}
+                  numCols={additionalNumCols}
+                  toAmountColIndex={additionalToAmountColIndex}
+                  premiumColIndex={additionalPremiumColIndex}
+                  setAmountInterval={setAdditionalAmountInterval}
+                  handleTableTextEditorStateChange={setAdditionalTableTextEditorState}
+                  setNumCols={setAdditionalNumCols}
+                  setToAmountColIndex={setAdditionalToAmountColIndex}
+                  setPremiumColIndex={setAdditionalPremiumColIndex}
+                />
+              )
+            }
+
+            {
+              isGenerating ? (
+                <p>Parsing the output...</p>
+              ) : (
+                parserOutput.text && (
+                  <Form.Field>
+                    <label>Parser output</label>
+                    {getTableVariableName(parserOutput)}
+                    <TextArea
+                      value={parserOutput.text}
+                      onChange={(e, {value}) => {
+                        // setTableName(getTableVariableName(parserOutput));
+                        setParserOutput({...parserOutput, text: value});
+                      }}
+                    >
+                    </TextArea>
+                  </Form.Field>
+                )
+              )
+            }
+
+            <Button
+              onClick={handleGenerateTable}
+            >
+              Preview
+            </Button>
+          </Form>
+        </Modal.Description>
+      </Modal.Content>
+    </Modal>
   );
 }
 
@@ -133,7 +162,7 @@ const TableTypeRadioButtons = ({tableType, setTableType}) => {
 const TableTextEditorStateInput = (
   {
     tableType, tableTextEditorState, amountInterval, numCols, toAmountColIndex, premiumColIndex,
-    handleTableTextEditorStateChange, setAmountInterval, setNumCols, setToAmountColIndex, setPremiumColIndex,
+    handleTableTextEditorStateChange, setAmountInterval, setNumCols, setToAmountColIndex, setPremiumColIndex, isGenerating
   }) => {
     const numberOptions = _.range(1, 9).map(x => ({key: x, value: x, text: x}));
 
@@ -155,7 +184,7 @@ const TableTextEditorStateInput = (
             defaultValue={amountInterval}
             onChange={(e, { value }) => {setAmountInterval(value)}}
           >
-            <input placeholder='Name of the table' />
+            <input />
           </Input>
         </Form.Field>
         <Form.Field>
@@ -178,6 +207,15 @@ const TableTextEditorStateInput = (
             onChange={(e, { value }) => {setToAmountColIndex(value)}}
           />
         </Form.Field>
+
+        {/* TODO: ability to add multiple sets of name & premium column
+          <Form.Field>
+            <label>Table Name</label>
+            <Input labelPosition='right' type='text' placeholder='Amount' onChange={(e) => {}}>
+              <input placeholder='Name of the table' />
+            </Input>
+          </Form.Field>
+        */}
         <Form.Field>
           <label>Premium Column Index</label>
           <Dropdown
@@ -188,9 +226,10 @@ const TableTextEditorStateInput = (
             onChange={(e, { value }) => {setPremiumColIndex(value)}}
           />
         </Form.Field>
+
       </div>
     );
 };
 
 
-export default ParserInput;
+export default ParserInputModal;
