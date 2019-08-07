@@ -11,7 +11,7 @@ import RateEditor from './RateEditor';
 import { getTableVariableName } from './utils';
 
 
-function ParserInputModal({tableName, setTableName, parserOutput, setParserOutput}) {
+function ParserInputModal({tableName, setTableName, parserOutput, setParserOutput, children}) {
   const [tableType, setTableType] = useState('');
 
   const [tableTextEditorState, setTableTextEditorState] = useState(EditorState.createEmpty());
@@ -52,7 +52,7 @@ function ParserInputModal({tableName, setTableName, parserOutput, setParserOutpu
   };
 
   return (
-    <Modal trigger={<Button>Show Modal</Button>}>
+    <Modal trigger={children}>
       <Modal.Header>Add {tableType} Table</Modal.Header>
       <Modal.Content>
         <Modal.Description>
@@ -109,27 +109,30 @@ function ParserInputModal({tableName, setTableName, parserOutput, setParserOutpu
                 <p>Parsing the output...</p>
               ) : (
                 parserOutput.text && (
-                  <Form.Field>
-                    <label>Parser output</label>
-                    {getTableVariableName(parserOutput)}
-                    <TextArea
-                      value={parserOutput.text}
-                      onChange={(e, {value}) => {
-                        // setTableName(getTableVariableName(parserOutput));
-                        setParserOutput({...parserOutput, text: value});
-                      }}
-                    >
-                    </TextArea>
-                  </Form.Field>
+                  <div>
+                    <Form.Field>
+                      <label>Parser output</label>
+                      {getTableVariableName(parserOutput)}
+                      <TextArea
+                        value={parserOutput.text}
+                        onChange={(e, {value}) => {
+                          // setTableName(getTableVariableName(parserOutput));
+                          setParserOutput({...parserOutput, text: value});
+                        }}
+                      >
+                      </TextArea>
+                    </Form.Field>
+                    <Form.Field>
+                      <Button
+                        onClick={handleGenerateTable}
+                      >
+                        Preview
+                      </Button>
+                    </Form.Field>
+                  </div>
                 )
               )
             }
-
-            <Button
-              onClick={handleGenerateTable}
-            >
-              Preview
-            </Button>
           </Form>
         </Modal.Description>
       </Modal.Content>

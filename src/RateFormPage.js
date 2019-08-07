@@ -42,7 +42,7 @@ function RateFormPage() {
   return (
     <AppContext.Consumer>
     { context => {
-      const formPayload = {stateCode: context.stateCode, underwriter: context.underwriter};
+      let formPayload = {stateCode: context.stateCode, underwriter: context.underwriter};
       if (promulgatedStates.includes(context.stateCode)) {
         return <Button onClick={() => {handleSubmit(formPayload)}}>Submit</Button>;
       }
@@ -63,15 +63,25 @@ function RateFormPage() {
               setTableName={setTableName}
               parserOutput={parserOutput}
               setParserOutput={setParserOutput}
-            />
+            >
+              <Button icon>
+                <Icon name='add' /> Add a table
+              </Button>
+            </ParserInputModal>
 
             {
-              (true || parserOutput.text) && (
+              (parserOutput.text) && (
                 <Segment>
-                  {/* TODO: Work on this edit button! */}
-                  <Button icon style={{float: 'right'}}>
-                    <Icon name='edit' />
-                  </Button>
+                  <ParserInputModal
+                    tableName={tableName}
+                    setTableName={setTableName}
+                    parserOutput={parserOutput}
+                    setParserOutput={setParserOutput}
+                  >
+                    <Button icon style={{float: 'right'}}>
+                      <Icon name='edit' />
+                    </Button>
+                  </ParserInputModal>
 
                   <p>{getTableVariableName(parserOutput)}</p>
                   <TextArea style={{resize: 'none'}} value={parserOutput.text} disabled>
@@ -80,13 +90,19 @@ function RateFormPage() {
               )
             }
           </div>
-            <Button
-              type="submit"
-              onClick={(e, value) => {
-                Object.assign(formPayload, {cpl_fee: cplFee});
-                handleSubmit(formPayload);
-              }}>Submit
-            </Button>
+          <Button
+            type="submit"
+            style={{textAlign: 'center'}}
+            onClick={(e, value) => {
+              formPayload = Object.assign({}, formPayload, {
+                cpl_fee: cplFee,
+                table_definitions: parserOutput.text,
+              });
+              handleSubmit(formPayload);
+            }}
+          >
+            Submit
+          </Button>
         </Form>
       );
       }
