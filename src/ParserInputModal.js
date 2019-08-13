@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { convertToRaw, EditorState } from 'draft-js';
 import {
-  Button, Input, Form, Dropdown, Header, Segment, Radio, Modal, TextArea, Dimmer, Loader
+  Button, Input, Form, Dropdown, Header, Segment, Radio, Modal, TextArea, Dimmer, Loader, Message
 } from 'semantic-ui-react'
 
 import axios from 'axios';
@@ -27,6 +27,7 @@ function ParserInputModal({tableName, setTableName, parserOutput, setParserOutpu
   const [additionalPremiumColIndex, setAdditionalPremiumColIndex] = useState(2);
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isJointTable = tableType === 'Joint';
   const convertEditorStateToText = (editorState) => {
@@ -51,15 +52,24 @@ function ParserInputModal({tableName, setTableName, parserOutput, setParserOutpu
     });
   };
 
+  const ParserWarningMessages = ({warnings}) => (
+    warnings.map(warning => (
+      <Message warning key={warning}>
+        <Message.Header>Warning: {warning}</Message.Header>
+        <p>Please make sure the input is valid</p>
+      </Message>
+    ))
+  );
+
   return (
-    <Modal trigger={children}>
+    <Modal trigger={children} open={isModalOpen} onOpen={() => setIsModalOpen(true)} onClose={() => setIsModalOpen(false)}>
       <Modal.Header>Add {tableType} Table</Modal.Header>
       <Modal.Content>
         <Modal.Description>
           <Header size='medium'></Header>
           <Form>
-            <label>Table Type</label>
             <Form.Field>
+              <label>Table Type</label>
               <TableTypeRadioButtons
                 tableType={tableType}
                 setTableType={setTableType}
@@ -86,6 +96,7 @@ function ParserInputModal({tableName, setTableName, parserOutput, setParserOutpu
               setToAmountColIndex={setToAmountColIndex}
               setPremiumColIndex={setPremiumColIndex}
             />
+
             {
               isJointTable && (
                 <TableTextEditorStateInput
@@ -113,6 +124,7 @@ function ParserInputModal({tableName, setTableName, parserOutput, setParserOutpu
                     <Form.Field>
                       <label>Parser output</label>
                       {getTableVariableName(parserOutput)}
+                      <ParserWarningMessages warnings={parserOutput.warnings} />
                       <TextArea
                         value={parserOutput.text}
                         onChange={(e, {value}) => {
@@ -122,17 +134,25 @@ function ParserInputModal({tableName, setTableName, parserOutput, setParserOutpu
                       >
                       </TextArea>
                     </Form.Field>
-                    <Form.Field>
-                      <Button
-                        onClick={handleGenerateTable}
-                      >
-                        Preview
-                      </Button>
-                    </Form.Field>
                   </div>
                 )
               )
             }
+            <Form.Field className="button-field">
+
+              <Button
+                primary
+                onClick={handleGenerateTable}
+              >
+                Convert
+              </Button>
+
+              <Button
+                onClick={() => {setIsModalOpen(false)}}
+              >
+                {!parserOutput.text ? 'Close' : 'Done'}
+              </Button>
+            </Form.Field>
           </Form>
         </Modal.Description>
       </Modal.Content>
@@ -170,7 +190,7 @@ const TableTextEditorStateInput = (
     const numberOptions = _.range(1, 9).map(x => ({key: x, value: x, text: x}));
 
     return (
-      <div>
+      <div className="table-text-input-fields">
         <Form.Field>
           <label>{tableType} Table Text</label>
           <RateEditor
@@ -191,7 +211,7 @@ const TableTextEditorStateInput = (
           </Input>
         </Form.Field>
         <Form.Field>
-          <label>Number of Columns with $</label>
+          <label>Number of $ Columns</label>
           <Dropdown
             placeholder='Number of Columns with $$$$'
             floating
@@ -220,7 +240,7 @@ const TableTextEditorStateInput = (
           </Form.Field>
         */}
         <Form.Field>
-          <label>Premium Column Index</label>
+          <label>'Premium' Column Index</label>
           <Dropdown
             placeholder='Index of the Column for Insurance Premium'
             floating

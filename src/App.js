@@ -12,7 +12,7 @@ import StatesDropdown from './StatesDropdown';
 import UnderwritersDropdown from './UnderwritersDropdown';
 import 'semantic-ui-css/semantic.min.css';
 
-import './App.css';
+import './App.scss';
 
 import { Icon, Step } from 'semantic-ui-react'
 
@@ -62,15 +62,24 @@ function App() {
       }}>
       <div className="App">
       <Container>
-        <RateGenerationStepGroup />
-        <div>
-          <UnderwritersDropdown onChange={(e, data) => setUnderwriter(data.value)}/>
-          <StatesDropdown onChange={(e, data) => setStateCode(data.value)}/>
-          <Button onClick={() => {resetStates()}}>Reset</Button>
+        <div className="steps-container">
+          <RateGenerationStepGroup />
         </div>
+
+        {
+          !(stateCode || underwriter) &&
+          <div>
+            <UnderwritersDropdown onChange={(e, data) => setUnderwriter(data.value)}/>
+            <StatesDropdown onChange={(e, data) => setStateCode(data.value)}/>
+            {/* <Button onClick={() => {resetStates()}}>Reset</Button> */}
+          </div>
+        }
         {
           (stateCode && underwriter) &&
-          <RateFormPage />
+          <div className="rate-form-page">
+            <h2>Rate Table and Variable Definitions for {underwriter} {stateCode}</h2>
+            <RateFormPage />
+          </div>
         }
       </Container>
       </div>

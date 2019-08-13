@@ -1,0 +1,46 @@
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ui.form .error.message, .ui.form .success.message, .ui.form .warning.message {
+  display: block;
+}
+.steps-container {
+  display: flex;
+  justify-content: center;
+}
+
+.rate-form-page {
+  margin-top: 16px;
+}
+
+.table-text-input-fields {
+  margin-top: 16px;
+}
+
+
+.ui.form .field label {
+  display: inline;
+  margin: 0 8px 0 0;
+}
+
+.ui.form .button-field {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+
+  .ui.primary.button {
+    background-color: #4daf7c;
+    color: white;
+    box-shadow: 0 -1px 0 0 rgba(0,0,0,.05) inset, 0 0 0 1px rgba(0,0,0,.13) inset, 0 1px 3px rgba(0,0,0,.15);
+
+    &:hover {
+      background-color: #6EC177;
+    }
+  }
+}

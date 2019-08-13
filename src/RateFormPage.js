@@ -65,7 +65,7 @@ function RateFormPage() {
               setParserOutput={setParserOutput}
             >
               <Button icon>
-                <Icon name='add' /> Add a table
+                <Icon name="add" /> Add a table
               </Button>
             </ParserInputModal>
 
@@ -79,30 +79,34 @@ function RateFormPage() {
                     setParserOutput={setParserOutput}
                   >
                     <Button icon style={{float: 'right'}}>
-                      <Icon name='edit' />
+                      <Icon name="edit" />
                     </Button>
                   </ParserInputModal>
 
-                  <p>{getTableVariableName(parserOutput)}</p>
+                  <h4>{getTableVariableName(parserOutput)}</h4>
                   <TextArea style={{resize: 'none'}} value={parserOutput.text} disabled>
                   </TextArea>
                 </Segment>
               )
             }
           </div>
-          <Button
-            type="submit"
-            style={{textAlign: 'center'}}
-            onClick={(e, value) => {
-              formPayload = Object.assign({}, formPayload, {
-                cpl_fee: cplFee,
-                table_definitions: parserOutput.text,
-              });
-              handleSubmit(formPayload);
-            }}
-          >
-            Submit
-          </Button>
+          <Form.Field className="button-field">
+            <Button
+              primary
+              className="next-button"
+              type="submit"
+              size="big"
+              onClick={(e, value) => {
+                formPayload = Object.assign({}, formPayload, {
+                  cpl_fee: cplFee,
+                  table_definitions: parserOutput.text,
+                });
+                handleSubmit(formPayload);
+              }}
+            >
+              Submit
+            </Button>
+          </Form.Field>
         </Form>
       );
       }
