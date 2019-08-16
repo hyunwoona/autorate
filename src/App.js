@@ -46,8 +46,8 @@ const RateGenerationStepGroup = () => (
 
 
 function App() {
-  const [stateCode, setStateCode] = useState('CA');
-  const [underwriter, setUnderwriter] = useState('WFG');
+  const [stateCode, setStateCode] = useState('');
+  const [underwriter, setUnderwriter] = useState('');
   const resetStates = () => {
     setStateCode('');
     setUnderwriter('');
@@ -67,16 +67,16 @@ function App() {
         </div>
 
         {
-          !(stateCode || underwriter) &&
+          !(stateCode && underwriter) &&
           <div>
             <UnderwritersDropdown onChange={(e, data) => setUnderwriter(data.value)}/>
             <StatesDropdown onChange={(e, data) => setStateCode(data.value)}/>
-            {/* <Button onClick={() => {resetStates()}}>Reset</Button> */}
           </div>
         }
         {
           (stateCode && underwriter) &&
           <div className="rate-form-page">
+            <a onClick={() => {resetStates()}}>Reset</a>
             <h2>Rate Table and Variable Definitions for {underwriter} {stateCode}</h2>
             <RateFormPage />
           </div>
